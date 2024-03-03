@@ -1,18 +1,51 @@
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const NavbarDashboard = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Menampilkan pesan toast
-    toast.success("yeay! logout Berhasil!", {
-      position: "top-center",
-      duration: 4000,
-    });
+  const handleLogout = async () => {
+    const confirmLogout = await toast.promise(
+      // Tampilkan notifikasi konfirmasi
+      new Promise((resolve) => {
+        resolve(window.confirm("Apakah Anda yakin untuk logout?"));
+      }),
+      {
+        loading: 'Menunggu konfirmasi...',
+        success: 'Logout Berhasil!',
+        error: 'Logout Gagal.',
+        duration: 4000,
+        position: "top-center",
+      }
+    );
 
-    // Mengarahkan pengguna ke halaman landing page
-    navigate('/');
+    if (confirmLogout) {
+      try {
+        const response = await axios.post('http://localhost:8000/api/logout', null, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.data.success) {
+          localStorage.removeItem('userData');
+          localStorage.removeItem('token');
+          navigate('/');
+        } else {
+          toast.error("Logout Gagal. Coba lagi nanti.", {
+            position: "top-center",
+            duration: 4000,
+          });
+        }
+      } catch (error) {
+        console.error("Logout Gagal. Terjadi kesalahan pada server.", error);
+        toast.error("Logout Gagal. Terjadi kesalahan pada server.", {
+          position: "top-center",
+          duration: 4000,
+        });
+      }
+    }
   };
 
   return (
